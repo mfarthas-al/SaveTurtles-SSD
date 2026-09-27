@@ -14,6 +14,7 @@ const GOOGLE_REDIRECT_URI =
 // Same secret AdminRoute.js signs the password-login JWT with, so a token
 // from either login method is checked the same way everywhere else.
 const JWT_SECRET = process.env.JWT_SECRET;
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
 const oauthClient = new OAuth2Client(
   GOOGLE_CLIENT_ID,
@@ -77,13 +78,17 @@ router.get("/google", (req, res) => {
 router.get("/google/callback", async (req, res) => {
   const { code, state } = req.query;
 
+  // Errors send the browser back to the login page with a message in the
+  // query string instead of showing raw JSON/text, since a real browser is
+  // what lands here (not an API client).
+  const failWithError = (message) =>
+    res.redirect(`${FRONTEND_URL}/admin?oauth_error=${encodeURIComponent(message)}`);
+
   if (!verifyState(state)) {
-    return res
-      .status(400)
-      .send("Login attempt expired or invalid, please try signing in again.");
+    return failWithError("Login attempt expired or invalid, please try again.");
   }
   if (!code) {
-    return res.status(400).send("Google did not return an authorization code.");
+    return failWithError("Google did not return an authorization code.");
   }
 
   try {
@@ -97,7 +102,7 @@ router.get("/google/callback", async (req, res) => {
     // Require Google to vouch for the email too, not just return one -
     // email_verified is false for accounts Google itself hasn't confirmed.
     if (!payload.email_verified) {
-      return res.status(401).send("Google account email is not verified.");
+      return failWithError("Google account email is not verified.");
     }
 
     // This is the actual access-control decision: Google confirming someone's
@@ -108,11 +113,9 @@ router.get("/google/callback", async (req, res) => {
     // admin" - that would just recreate Finding #1 through a different door.
     const admin = await Admin.findOne({ email: payload.email });
     if (!admin) {
-      return res
-        .status(403)
-        .send(
-          "This Google account is not linked to an admin account. Ask an existing admin to add your email first."
-        );
+      return failWithError(
+        "This Google account is not linked to an admin account. Ask an existing admin to add your email first."
+      );
     }
 
     const token = jwt.sign(
@@ -121,10 +124,14 @@ router.get("/google/callback", async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    return res.json({ message: "Login successful", token });
+    // Hand the token to the frontend via a one-time redirect rather than
+    // showing it as JSON in the browser - OAuthCallback.jsx picks it up,
+    // stores it exactly like the password-login flow does, then navigates
+    // to the dashboard.
+    return res.redirect(`${FRONTEND_URL}/admin/oauth-callback?token=${token}`);
   } catch (error) {
     console.error("Google OAuth callback error:", error.message);
-    return res.status(401).send("Google sign-in failed.");
+    return failWithError("Google sign-in failed.");
   }
 });
 
