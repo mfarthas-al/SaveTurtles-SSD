@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import path from "path";
 import bookingEmail from "./routes/bookingEmail.js";
 import adminRoute from "./routes/AdminRoute.js";
+import oauthRoute from "./routes/oauthRoute.js";
 import faqRouter from "./routes/faqRoutes.js";
 import ticketRouter from "./routes/ticketRoutes.js";
 import productRoute from "./routes/productRoute.js";
@@ -93,6 +94,9 @@ app.use("/sendDonationEmail", donationEmail);
 //login
 app.use("/admin", adminRoute);
 app.use("/admin/register", adminRoute);
+
+// Google OAuth login (alternate way in for existing admins - see oauthRoute.js)
+app.use("/auth", oauthRoute);
 
 // Product Routes
 app.use("/products", productRoute);
