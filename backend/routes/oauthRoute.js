@@ -118,8 +118,12 @@ router.get("/google/callback", async (req, res) => {
       );
     }
 
+    // Must match the shape AdminRoute.js signs on password login (id + role)
+    // now that requireAdmin (middleware/auth.js, from Finding #1's fix)
+    // checks decoded.role === "admin" - otherwise a Google-authenticated
+    // admin would log in fine but get 403'd on every actual admin action.
     const token = jwt.sign(
-      { id: admin._id, username: admin.username },
+      { id: admin._id, role: "admin" },
       JWT_SECRET,
       { expiresIn: "1h" }
     );
