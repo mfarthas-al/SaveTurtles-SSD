@@ -1,6 +1,8 @@
 import express from "express";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
+import Admin from "../models/AdminModel.js";
 
 const router = express.Router();
 
@@ -9,6 +11,9 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_REDIRECT_URI =
   process.env.GOOGLE_REDIRECT_URI ||
   "http://localhost:5555/auth/google/callback";
+// Same secret AdminRoute.js signs the password-login JWT with, so a token
+// from either login method is checked the same way everywhere else.
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const oauthClient = new OAuth2Client(
   GOOGLE_CLIENT_ID,
@@ -89,14 +94,34 @@ router.get("/google/callback", async (req, res) => {
     });
     const payload = ticket.getPayload();
 
-    // TEMPORARY for this step: just prove we can reach a verified Google
-    // identity end to end. Next commit restricts this to existing admins
-    // and issues our own JWT instead of exposing the Google payload.
-    return res.json({
-      message: "Google identity verified",
-      email: payload.email,
-      emailVerified: payload.email_verified,
-    });
+    // Require Google to vouch for the email too, not just return one -
+    // email_verified is false for accounts Google itself hasn't confirmed.
+    if (!payload.email_verified) {
+      return res.status(401).send("Google account email is not verified.");
+    }
+
+    // This is the actual access-control decision: Google confirming someone's
+    // identity is not enough on its own to grant admin access. They must
+    // already be an admin whose account has this email linked (set via
+    // /admin/register or by an existing admin updating their own record).
+    // There is no self-service path from "has a Google account" to "is an
+    // admin" - that would just recreate Finding #1 through a different door.
+    const admin = await Admin.findOne({ email: payload.email });
+    if (!admin) {
+      return res
+        .status(403)
+        .send(
+          "This Google account is not linked to an admin account. Ask an existing admin to add your email first."
+        );
+    }
+
+    const token = jwt.sign(
+      { id: admin._id, username: admin.username },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    return res.json({ message: "Login successful", token });
   } catch (error) {
     console.error("Google OAuth callback error:", error.message);
     return res.status(401).send("Google sign-in failed.");
