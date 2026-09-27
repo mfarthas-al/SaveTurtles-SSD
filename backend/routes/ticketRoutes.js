@@ -124,14 +124,14 @@ ticketRouter.post("/:id/reply", requireAdmin, async (req, res) => {
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
-                user: "saveturtlescaresl@gmail.com",
-                pass: "vsglcgmwxxtlmlbj",
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
             },
         });
 
         // Email details
         const mailOptions = {
-            from: "saveturtlescaresl@gmail.com",
+            from: process.env.EMAIL_USER,
             to: ticket.email, // Send to the ticket creator's email
             subject: `Reply to your ticket: \n${ticket.topic}`,
             text: `Dear ${ticket.name},\n\nYou have received a reply to your ticket:\n\n"${message}"\n\nBest regards,\nSupport Team`,

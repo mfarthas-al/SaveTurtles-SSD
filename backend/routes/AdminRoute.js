@@ -1,12 +1,29 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 import Admin from "../models/AdminModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET environment variable is required");
+}
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// No limit on login attempts before this meant a script could try passwords
+// forever. 10 tries per 15 min per IP is enough for a real admin who mistypes
+// a password but too slow to be useful for brute-forcing one.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { message: "Too many login attempts, please try again later" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Admin Login
-router.post("/login", async (req, res) => {
+router.post("/login", loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
     const admin = await Admin.findOne({ username });
@@ -21,7 +38,7 @@ router.post("/login", async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { id: admin._id, role: "admin" },
-      process.env.JWT_SECRET,
+      JWT_SECRET,
       { expiresIn: "1h" }
     );
 

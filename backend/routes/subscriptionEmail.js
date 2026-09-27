@@ -40,15 +40,15 @@ subEmailRouter.post("/", requireAdmin, async (req, res) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "saveturtlescaresl@gmail.com", // sender email
-      pass: "vsglcgmwxxtlmlbj", // sender email password
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
     },
   });
 
   // Sending the email
   try {
     await transporter.sendMail({
-      from: "saveturtlescaresl@gmail.com",
+      from: process.env.EMAIL_USER,
       to: email,
       subject: subject,
       text: text,
