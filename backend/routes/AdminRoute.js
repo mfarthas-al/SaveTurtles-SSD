@@ -37,7 +37,7 @@ router.post("/login", loginLimiter, async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: admin._id, username: admin.username },
+      { id: admin._id, role: "admin" },
       JWT_SECRET,
       { expiresIn: "1h" }
     );

@@ -1,4 +1,5 @@
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import { Product } from "../models/productModel.js";
 import multer from "multer";
 import path from "path";
@@ -21,7 +22,7 @@ const upload = multer({ storage: storage });
 router.use('/uploads/productImage/', express.static(path.join(path.resolve(), 'uploads/productImage/')));
 
 // Route for saving a new product with an image
-router.post("/", upload.single('image'), async (request, response) => {
+router.post("/", requireAdmin, upload.single('image'), async (request, response) => {
   try {
     if (
       !request.body.name ||
@@ -82,7 +83,7 @@ router.get("/:id", async (request, response) => {
 });
 
 // Route for updating a product (with image update)
-router.put("/:id", upload.single('image'), async (request, response) => {
+router.put("/:id", requireAdmin, upload.single('image'), async (request, response) => {
   try {
     if (
       !request.body.name ||
@@ -119,7 +120,7 @@ router.put("/:id", upload.single('image'), async (request, response) => {
 });
 
 // Route for deleting a product
-router.delete("/:id", async (request, response) => {
+router.delete("/:id", requireAdmin, async (request, response) => {
   try {
     const { id } = request.params;
     const result = await Product.findByIdAndDelete(id);

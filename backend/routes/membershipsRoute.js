@@ -1,10 +1,11 @@
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import { Membership } from "../models/membershipModel.js";
 
 const MembershipRouter = express.Router();
 
 // Create a new membership plan
-MembershipRouter.post("/", async (request, response) => {
+MembershipRouter.post("/", requireAdmin, async (request, response) => {
   try {
     const { name, price, duration, features } = request.body;
 
@@ -61,7 +62,7 @@ MembershipRouter.get("/:id", async (request, response) => {
 });
 
 // Update a membership plan
-MembershipRouter.put("/:id", async (request, response) => {
+MembershipRouter.put("/:id", requireAdmin, async (request, response) => {
   try {
     const { id } = request.params;
     const { name, price, duration, features } = request.body;
@@ -90,7 +91,7 @@ MembershipRouter.put("/:id", async (request, response) => {
 });
 
 // Delete a membership plan
-MembershipRouter.delete("/:id", async (request, response) => {
+MembershipRouter.delete("/:id", requireAdmin, async (request, response) => {
   try {
     const { id } = request.params;
     const result = await Membership.findByIdAndDelete(id);

@@ -1,4 +1,5 @@
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import multer from "multer";
 import {
   addSaveMe,
@@ -30,9 +31,9 @@ saveMeRouter.get("/", getAllSaveMes); // New route to fetch all reports
 saveMeRouter.get("/:id", getSaveMeById);
 
 // Route to update a SaveMe report by ID with optional image upload
-saveMeRouter.put("/:id", upload.single("photo"), updateSaveMe);
+saveMeRouter.put("/:id", requireAdmin, upload.single("photo"), updateSaveMe);
 
 // Route to delete a SaveMe report by ID
-saveMeRouter.delete("/:id", deleteSaveMe);
+saveMeRouter.delete("/:id", requireAdmin, deleteSaveMe);
 
 export default saveMeRouter;

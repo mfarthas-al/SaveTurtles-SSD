@@ -1,11 +1,12 @@
 // routes/bookingEmail.js
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import nodemailer from "nodemailer";
 
 const router = express.Router();
 
 // Email sending endpoint
-router.post("/", async (req, res) => {
+router.post("/", requireAdmin, async (req, res) => {
   const { email, status } = req.body; // Get email and status from the request body
 
   let subject, text;

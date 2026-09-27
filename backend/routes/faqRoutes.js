@@ -1,9 +1,10 @@
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import { faQuestions } from "../models/faqModel.js";
 
 const faqRouter = express.Router();
 
-faqRouter.post("/", async (request, response) => {
+faqRouter.post("/", requireAdmin, async (request, response) => {
     try {
         if (!request.body.question || !request.body.answer) {
             return response.status(400).send({
@@ -46,7 +47,7 @@ faqRouter.get("/:id", async (request, response) => {
     }
 });
 
-faqRouter.put("/:id", async (request, response) => {
+faqRouter.put("/:id", requireAdmin, async (request, response) => {
     try {
         if (!request.body.question || !request.body.answer) {
             return response.status(400).send({
@@ -68,7 +69,7 @@ faqRouter.put("/:id", async (request, response) => {
     }
 });
 
-faqRouter.delete("/:id", async (request, response) => {
+faqRouter.delete("/:id", requireAdmin, async (request, response) => {
     try {
         const { id } = request.params;
         const result = await faQuestions.findByIdAndDelete(id);

@@ -1,4 +1,5 @@
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import { EventParticipant } from "../models/eventParticipentModel.js";
 import { EventProgram } from "../models/eventModel.js";
 import multer from "multer";
@@ -111,7 +112,7 @@ router.get("/:id", async (request, response) => {
 });
 
 // Route for updating a participant (with image update)
-router.put("/:id", upload.single("paymentImage"), async (request, response) => {
+router.put("/:id", requireAdmin, upload.single("paymentImage"), async (request, response) => {
   try {
     if (
       !request.body.participantName ||
@@ -162,7 +163,7 @@ router.put("/:id", upload.single("paymentImage"), async (request, response) => {
 });
 
 // Route for deleting a participant
-router.delete("/:id", async (request, response) => {
+router.delete("/:id", requireAdmin, async (request, response) => {
   try {
     const { id } = request.params;
     const result = await EventParticipant.findByIdAndDelete(id);

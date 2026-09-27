@@ -1,4 +1,5 @@
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import { Return } from "../models/ReturnsModel.js";
 
 const ReturnRouter = express.Router();
@@ -67,7 +68,7 @@ ReturnRouter.get("/:id", async (request, response) => {
     }
 });
 
-ReturnRouter.put("/:id", async (request, response) => {
+ReturnRouter.put("/:id", requireAdmin, async (request, response) => {
     try {
         const { id } = request.params;
         const { productId, orderId, reason, refundAmount, returnDate, email } =
@@ -105,7 +106,7 @@ ReturnRouter.put("/:id", async (request, response) => {
     }
 });
 
-ReturnRouter.delete("/:id", async (request, response) => {
+ReturnRouter.delete("/:id", requireAdmin, async (request, response) => {
     try {
         const { id } = request.params;
         const result = await Return.findByIdAndDelete(id);
