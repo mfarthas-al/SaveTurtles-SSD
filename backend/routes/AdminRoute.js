@@ -1,5 +1,6 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
+import { requireAdmin } from "../middleware/auth.js";
 import Admin from "../models/AdminModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -30,6 +31,14 @@ router.post("/login", loginLimiter, async (req, res) => {
     if (!admin) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
+    // Invited admins (added via /admin/invite) have no password at all -
+    // they can only sign in with Google. bcrypt.compare would throw on an
+    // undefined hash, so check for that case explicitly first.
+    if (!admin.password) {
+      return res
+        .status(400)
+        .json({ message: "This account can only sign in with Google" });
+    }
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -49,8 +58,13 @@ router.post("/login", loginLimiter, async (req, res) => {
   }
 });
 
-// Admin Registration
-router.post("/register", async (req, res) => {
+// Admin Registration - this used to have no auth check at all, meaning
+// anyone could create their own admin account (the most severe part of
+// Finding #1's Broken Access Control, missed by the earlier fix to the
+// other routes). Only an existing admin can create another one now; the
+// very first admin has to be seeded directly in the database, not through
+// this API.
+router.post("/register", requireAdmin, async (req, res) => {
   try {
     const { username, password, email } = req.body;
 
