@@ -10,6 +10,13 @@ const adminSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  // Optional - lets an admin sign in with Google instead of a password.
+  // sparse index so multiple admins without one set don't collide on null.
+  email: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
 });
 
 export default mongoose.model("Admin", adminSchema);

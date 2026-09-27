@@ -52,7 +52,7 @@ router.post("/login", loginLimiter, async (req, res) => {
 // Admin Registration
 router.post("/register", async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, email } = req.body;
 
     // Check if admin already exists
     const existingAdmin = await Admin.findOne({ username });
@@ -61,7 +61,9 @@ router.post("/register", async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newAdmin = new Admin({ username, password: hashedPassword });
+    // email is optional - only needed if this admin wants to also be able
+    // to sign in with Google (see oauthRoute.js).
+    const newAdmin = new Admin({ username, password: hashedPassword, email });
     await newAdmin.save();
     res.status(201).json({ message: "Admin registered successfully" });
   } catch (error) {
