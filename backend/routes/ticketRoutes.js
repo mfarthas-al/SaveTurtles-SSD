@@ -68,7 +68,15 @@ ticketRouter.put("/:id", async (request, response) => {
             });
         }
         const { id } = request.params;
-        const result = await Ticket.findByIdAndUpdate(id, request.body);
+        // Only these fields are editable here. Passing the raw body through let
+        // anyone set "status" (or "replies") directly, skipping the reply flow
+        // below that's supposed to be the only way a ticket gets marked solved.
+        const editableFields = {
+            topic: request.body.topic,
+            description: request.body.description,
+            email: request.body.email,
+        };
+        const result = await Ticket.findByIdAndUpdate(id, editableFields);
 
         if (!result) {
             return response.status(400).json({ message: "Ticket not found" });
