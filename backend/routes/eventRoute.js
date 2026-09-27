@@ -77,7 +77,17 @@ router.put("/:id", async (request, response) => {
       });
     }
     const { id } = request.params;
-    const result = await EventProgram.findByIdAndUpdate(id, request.body);
+    // Same fix as ticketRoutes.js: only pass through the fields we actually
+    // validated above, not the raw body.
+    const editableFields = {
+      eventName: request.body.eventName,
+      vanue: request.body.vanue,
+      date: request.body.date,
+      time: request.body.time,
+      allocatedPersonCount: request.body.allocatedPersonCount,
+      price: request.body.price,
+    };
+    const result = await EventProgram.findByIdAndUpdate(id, editableFields);
 
     if (!result) {
       return response.status(400).json({ message: "Event not found" });

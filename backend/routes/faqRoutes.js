@@ -54,7 +54,13 @@ faqRouter.put("/:id", async (request, response) => {
             });
         }
         const { id } = request.params;
-        const result = await faQuestions.findByIdAndUpdate(id, request.body);
+        // Same fix as ticketRoutes.js: only pass through the fields we actually
+        // validated above, not the raw body.
+        const editableFields = {
+            question: request.body.question,
+            answer: request.body.answer,
+        };
+        const result = await faQuestions.findByIdAndUpdate(id, editableFields);
 
         if (!result) {
             return response.status(400).json({ message: "Question not found" });

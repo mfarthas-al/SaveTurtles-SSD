@@ -73,7 +73,16 @@ router.put("/:id", async (request, response) => {
       });
     }
     const { id } = request.params;
-    const result = await Refund.findByIdAndUpdate(id, request.body);
+    // Same fix as ticketRoutes.js: only pass through the fields we actually
+    // validated above, not the raw body.
+    const editableFields = {
+      eventName: request.body.eventName,
+      userId: request.body.userId,
+      amount: request.body.amount,
+      reason: request.body.reason,
+      email: request.body.email,
+    };
+    const result = await Refund.findByIdAndUpdate(id, editableFields);
 
     if (!result) {
       return response.status(400).json({ message: "Refund not found" });
