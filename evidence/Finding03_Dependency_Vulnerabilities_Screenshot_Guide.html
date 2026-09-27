@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Finding #3 — Dependency Vulnerabilities (Screenshot Guide)</title>
+  <style>
+    :root {
+      --ink: #1a2332;
+      --muted: #5a6577;
+      --line: #d8dee8;
+      --accent: #0b6e4f;
+      --warn: #9a3412;
+      --bg: #f7f8fb;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+    }
+    header {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 28px 28px 22px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.55rem;
+      color: var(--accent);
+    }
+    .meta {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .badge {
+      display: inline-block;
+      background: #fee2e2;
+      color: var(--warn);
+      font-weight: 600;
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-top: 12px;
+    }
+    section {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 1.15rem;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 6px;
+    }
+    h3 {
+      margin: 18px 0 8px;
+      font-size: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #eef2f7; }
+    code, .path {
+      font-family: Consolas, "Courier New", monospace;
+      background: #eef2f7;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.88em;
+    }
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 14px 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
+    .shot {
+      background: #fff7ed;
+      border-left: 4px solid #ea580c;
+      padding: 10px 14px;
+      margin: 10px 0;
+      font-size: 0.92rem;
+    }
+    .note {
+      background: #ecfdf5;
+      border-left: 4px solid var(--accent);
+      padding: 10px 14px;
+      margin: 10px 0;
+      font-size: 0.92rem;
+    }
+    ol.shots li { margin-bottom: 10px; }
+    .print-btn {
+      display: inline-block;
+      margin-top: 14px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    @media print {
+      body { background: white; }
+      .print-btn { display: none; }
+      .wrap { padding: 0; max-width: none; }
+      section, header { break-inside: avoid; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Finding #3 — Outdated Dependencies with Known CVEs</h1>
+      <div class="meta">
+        SE4030 Secure Software Development · SaveTurtles.lk<br />
+        OWASP Top 10:2025 — <strong>A03 Software Supply Chain Failures</strong> · Severity: <strong>High</strong>
+      </div>
+      <div class="badge">Screenshot / evidence guide for report</div>
+      <br />
+      <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+    </header>
+
+    <section>
+      <h2>1. What is this finding?</h2>
+      <p>
+        This is a <strong>dependency vulnerability</strong> issue.
+        The problem is <strong>not</strong> a bug inside your route/controller <code>.js</code> logic.
+        Vulnerable versions are declared and locked in the npm package files, then installed into <code>node_modules</code>.
+      </p>
+      <div class="note">
+        <strong>For the report:</strong> show <code>package.json</code> + <code>package-lock.json</code> + terminal <code>npm audit</code> output.
+        Do not look for a CVE line inside AdminRoute or email files (that was Finding #2).
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Where in the project? (files to open)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>File path</th>
+            <th>What to show</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td class="path">backend/package.json</td>
+            <td>Direct deps — especially <code>"multer": "^1.4.4"</code> (CVE-2022-24434 called out in report)</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td class="path">backend/package-lock.json</td>
+            <td>Exact locked versions of backend dependency tree</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td class="path">frontend/package.json</td>
+            <td>Frontend deps (axios, vite, xlsx, jspdf, react, …)</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td class="path">frontend/package-lock.json</td>
+            <td>Exact locked versions of frontend dependency tree</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td class="path">Terminal → npm audit</td>
+            <td>Proof of known CVEs (counts + package names)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Backend package.json — highlight this line</h3>
+      <pre>"multer": "^1.4.4",</pre>
+      <p class="meta">File: <span class="path">backend/package.json</span> (dependencies section, near line 23)</p>
+
+      <h3>Also listed in backend/package.json (same screenshot area)</h3>
+      <pre>bcrypt, cors, dotenv, express, express-rate-limit,
+gridfs-stream, jsonwebtoken, mongoose, multer,
+multer-gridfs-storage, nodemailer, nodemon</pre>
+
+      <h3>Frontend package.json — dependencies / devDependencies</h3>
+      <pre>axios, chart.js, framer-motion, jspdf, jspdf-autotable,
+leaflet, lucide-react, react, react-dom, react-router-dom,
+recharts, xlsx, vite, eslint, …</pre>
+    </section>
+
+    <section>
+      <h2>3. Where is multer used in code? (optional extra screenshot)</h2>
+      <p>
+        These files <strong>import</strong> multer. They are usage sites, not where the CVE is “written”.
+        Optional for report: show one import to prove the vulnerable package is actually used.
+      </p>
+      <table>
+        <thead>
+          <tr><th>File</th><th>Why relevant</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="path">backend/routes/productRoute.js</td><td>import multer</td></tr>
+          <tr><td class="path">backend/routes/purchaseRoute.js</td><td>import multer</td></tr>
+          <tr><td class="path">backend/routes/donationsRoute.js</td><td>import multer</td></tr>
+          <tr><td class="path">backend/routes/subscriptionRoute.js</td><td>import multer</td></tr>
+          <tr><td class="path">backend/routes/eventParticipentRoute.js</td><td>import multer</td></tr>
+          <tr><td class="path">backend/routes/saveMeRoutes.js</td><td>import multer</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>4. Screenshot checklist (do in this order)</h2>
+      <ol class="shots">
+        <li>
+          <strong>Shot A — Backend package.json</strong><br />
+          Open <span class="path">backend/package.json</span>, zoom so <code>multer</code> line is visible.
+          <div class="shot">Caption idea: “Vulnerable direct dependency declared: multer ^1.4.4”</div>
+        </li>
+        <li>
+          <strong>Shot B — Backend npm audit</strong><br />
+          PowerShell:
+          <pre>cd D:\Y4S2\SSD-ASS\SaveTurtles-SSD\backend
+npm audit</pre>
+          Capture full summary (vulnerability counts).
+          <div class="shot">Report baseline: 18 vulnerabilities (3 low, 1 moderate, 12 high, 2 critical)</div>
+        </li>
+        <li>
+          <strong>Shot C — Frontend package.json</strong><br />
+          Open <span class="path">frontend/package.json</span> dependencies block.
+        </li>
+        <li>
+          <strong>Shot D — Frontend npm audit</strong>
+          <pre>cd D:\Y4S2\SSD-ASS\SaveTurtles-SSD\frontend
+npm audit</pre>
+          <div class="shot">Report baseline: 32 vulnerabilities (2 low, 8 moderate, 20 high, 2 critical)</div>
+        </li>
+        <li>
+          <strong>Shot E (optional) — Save audit text for appendix</strong>
+          <pre>cd backend
+npm audit > ..\evidence\03a_npm_audit_backend.txt
+
+cd ..\frontend
+npm audit > ..\evidence\03b_npm_audit_frontend.txt</pre>
+        </li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>5. Report wording (copy-ready)</h2>
+      <pre>Affected file(s): backend/package.json, frontend/package.json
+(and their lockfiles: backend/package-lock.json, frontend/package-lock.json)
+
+Method: Software Composition Analysis (npm audit)
+
+Example findings:
+- multer &lt;=1.4.4-lts.2 — CVE-2022-24434 (DoS via malformed multipart body)
+- body-parser &lt;=1.20.6 — GHSA-qwcr-r2fm-qrc7 (DoS)
+
+Remediation direction:
+npm audit fix / npm audit fix --force (with testing),
+pin versions, recurring dependency scanning.</pre>
+    </section>
+
+    <section>
+      <h2>6. How to download this guide as PDF</h2>
+      <ol>
+        <li>Open this HTML file in Chrome / Edge (double-click the file).</li>
+        <li>Press <strong>Ctrl + P</strong> (or click the green button above).</li>
+        <li>Destination → <strong>Save as PDF</strong> → Save.</li>
+      </ol>
+      <p class="meta">
+        File location on disk:<br />
+        <span class="path">D:\Y4S2\SSD-ASS\SaveTurtles-SSD\evidence\Finding03_Dependency_Vulnerabilities_Screenshot_Guide.html</span>
+      </p>
+    </section>
+  </div>
+</body>
+</html>
