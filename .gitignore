@@ -3,6 +3,10 @@
 
 /frontend/node_modules/
 
+# Vite/React build output — do not commit
+/frontend/dist/
+frontend/dist/
+
 # Secrets — never commit real credentials
 .env
 backend/.env
