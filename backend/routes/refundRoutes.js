@@ -1,4 +1,5 @@
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import { Refund } from "../models/refundModel.js";
 
 const router = express.Router();
@@ -59,7 +60,7 @@ router.get("/:id", async (request, response) => {
 });
 
 //Route Update a book
-router.put("/:id", async (request, response) => {
+router.put("/:id", requireAdmin, async (request, response) => {
   try {
     if (
       !request.body.eventName ||
@@ -86,7 +87,7 @@ router.put("/:id", async (request, response) => {
 });
 
 //Route for Delete a Book
-router.delete("/:id", async (request, response) => {
+router.delete("/:id", requireAdmin, async (request, response) => {
   try {
     const { id } = request.params;
     const result = await Refund.findByIdAndDelete(id);

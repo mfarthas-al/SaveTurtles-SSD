@@ -1,4 +1,5 @@
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import nodemailer from "nodemailer";
 import { Ticket } from "../models/ticketModel.js";
 
@@ -56,7 +57,7 @@ ticketRouter.get("/:id", async (request, response) => {
     }
 });
 
-ticketRouter.put("/:id", async (request, response) => {
+ticketRouter.put("/:id", requireAdmin, async (request, response) => {
     try {
         if (
             !request.body.topic ||
@@ -82,7 +83,7 @@ ticketRouter.put("/:id", async (request, response) => {
     }
 });
 
-ticketRouter.delete("/:id", async (request, response) => {
+ticketRouter.delete("/:id", requireAdmin, async (request, response) => {
     try {
         const { id } = request.params;
         const result = await Ticket.findByIdAndDelete(id);
@@ -100,7 +101,7 @@ ticketRouter.delete("/:id", async (request, response) => {
     }
 });
 
-ticketRouter.post("/:id/reply", async (req, res) => {
+ticketRouter.post("/:id/reply", requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { message } = req.body;

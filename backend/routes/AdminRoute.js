@@ -4,7 +4,6 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret"; // Use an environment variable in production
 
 // Admin Login
 router.post("/login", async (req, res) => {
@@ -21,8 +20,8 @@ router.post("/login", async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: admin._id, username: admin.username },
-      JWT_SECRET,
+      { id: admin._id, role: "admin" },
+      process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 

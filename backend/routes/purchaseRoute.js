@@ -1,4 +1,5 @@
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import { Purchase } from "../models/purchaseModel.js";
 import { Product } from "../models/productModel.js";
 import multer from "multer";
@@ -118,7 +119,7 @@ router.get("/:id", async (request, response) => {
 });
 
 // Route for updating a purchase (with image update)
-router.put("/:id", upload.single("paymentImage"), async (request, response) => {
+router.put("/:id", requireAdmin, upload.single("paymentImage"), async (request, response) => {
     try {
         if (
             !request.body.customerName ||
@@ -169,7 +170,7 @@ router.put("/:id", upload.single("paymentImage"), async (request, response) => {
 });
 
 // Route for deleting a purchase
-router.delete("/:id", async (request, response) => {
+router.delete("/:id", requireAdmin, async (request, response) => {
     try {
         const { id } = request.params;
         const result = await Purchase.findByIdAndDelete(id);
@@ -189,7 +190,7 @@ router.delete("/:id", async (request, response) => {
     }
 });
 
-router.put("/updateApprovalStatus/:id", async (request, response) => {
+router.put("/updateApprovalStatus/:id", requireAdmin, async (request, response) => {
     try {
         const { id } = request.params;
         const { approvalStatus } = request.body;

@@ -1,4 +1,5 @@
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import { Subscription } from "../models/subscriptionModel.js";
 import multer from "multer";
 import path from "path";
@@ -83,7 +84,7 @@ SubscriptionRouter.get("/:id", async (request, response) => {
 });
 
 //Set Status to approved or disaapproved
-SubscriptionRouter.put("/:id", async (request, response) => {
+SubscriptionRouter.put("/:id", requireAdmin, async (request, response) => {
   try {
     const { id } = request.params;
     const { status } = request.body;

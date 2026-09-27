@@ -1,11 +1,12 @@
 // routes/subscriptionEmail.js
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import nodemailer from "nodemailer";
 
 const subEmailRouter = express.Router();
 
 // Email sending endpoint
-subEmailRouter.post("/", async (req, res) => {
+subEmailRouter.post("/", requireAdmin, async (req, res) => {
   const { email, status } = req.body; // Get email and status from the request body
 
   let subject, text;

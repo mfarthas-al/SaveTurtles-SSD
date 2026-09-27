@@ -1,4 +1,5 @@
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import { Donation } from "../models/donationModel.js";
 import multer from "multer";
 import path from "path";
@@ -89,7 +90,7 @@ router.get("/:id", async (request, response) => {
 });
 
 //Route Update a book
-router.put("/:id", upload.single("paymentImage"),async (request, response) => {
+router.put("/:id", requireAdmin, upload.single("paymentImage"),async (request, response) => {
   try {
     if (
       !request.body.donorName ||
@@ -128,7 +129,7 @@ router.put("/:id", upload.single("paymentImage"),async (request, response) => {
 });
 
 //Route for Delete a Book
-router.delete("/:id", async (request, response) => {
+router.delete("/:id", requireAdmin, async (request, response) => {
   try {
     const { id } = request.params;
     const result = await Donation.findByIdAndDelete(id);

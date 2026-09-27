@@ -1,10 +1,11 @@
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import { EventProgram } from "../models/eventModel.js";
 
 const router = express.Router();
 
 //Route for save a new event
-router.post("/", async (request, response) => {
+router.post("/", requireAdmin, async (request, response) => {
   try {
     if (
       !request.body.eventName ||
@@ -61,7 +62,7 @@ router.get("/:id", async (request, response) => {
 });
 
 //Route Update a events
-router.put("/:id", async (request, response) => {
+router.put("/:id", requireAdmin, async (request, response) => {
   try {
     if (
       !request.body.eventName ||
@@ -90,7 +91,7 @@ router.put("/:id", async (request, response) => {
 });
 
 //Route for Delete a events
-router.delete("/:id", async (request, response) => {
+router.delete("/:id", requireAdmin, async (request, response) => {
   try {
     const { id } = request.params;
     const result = await EventProgram.findByIdAndDelete(id);
