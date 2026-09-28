@@ -5,25 +5,25 @@ import { EventProgram } from "../models/eventModel.js";
 import multer from "multer";
 import path from "path";
 
+import { createSecureUpload } from "../middleware/upload.js";
+
 const router = express.Router();
 
-// Configure Multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/eventPayment/"); // Save uploaded images in the 'uploads/' directory
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname); // Unique filename with timestamp
-  },
-});
-
-const upload = multer({ storage: storage });
-
-// Serve static files from the 'uploads' folder
-router.use(
-  "/uploads/eventPayment/",
-  express.static(path.join(path.resolve(), "/uploads/eventPayment/"))
-);
+// =========================================================================
+// [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+// Previously, raw user filenames, unbounded file size, and no MIME/ext filters:
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, "uploads/eventPayment/");
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, Date.now() + "-" + file.originalname);
+//   },
+// });
+// const upload = multer({ storage: storage });
+// =========================================================================
+// [HARDENED FIX]: Centralized secure upload with UUID naming, type allowlist, and 5MB limit
+const upload = createSecureUpload("uploads/eventPayment/");
 
 // Route for saving a new participant with an image
 router.post("/", upload.single("paymentImage"), async (request, response, next) => {
