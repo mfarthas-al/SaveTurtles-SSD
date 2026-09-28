@@ -24,7 +24,7 @@ const loginLimiter = rateLimit({
 });
 
 // Admin Login
-router.post("/login", loginLimiter, async (req, res) => {
+router.post("/login", loginLimiter, async (req, res, next) => {
   try {
     const { username, password } = req.body;
 
@@ -59,8 +59,13 @@ router.post("/login", loginLimiter, async (req, res) => {
 
     res.json({ message: "Login successful", token });
   } catch (error) {
-    console.error("Error in admin login:", error);
-    res.status(500).json({ message: "Error logging in", error: error.message });
+    // =========================================================================
+    // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+    // Previously leaked raw error message:
+    // res.status(500).json({ message: "Error logging in", error: error.message });
+    // =========================================================================
+    // [HARDENED FIX]: Delegate error to centralized error handling middleware
+    next(error);
   }
 });
 
@@ -70,7 +75,7 @@ router.post("/login", loginLimiter, async (req, res) => {
 // other routes). Only an existing admin can create another one now; the
 // very first admin has to be seeded directly in the database, not through
 // this API.
-router.post("/register", requireAdmin, async (req, res) => {
+router.post("/register", requireAdmin, async (req, res, next) => {
   try {
     const { username, password, email } = req.body;
 
@@ -92,10 +97,13 @@ router.post("/register", requireAdmin, async (req, res) => {
     await newAdmin.save();
     res.status(201).json({ message: "Admin registered successfully" });
   } catch (error) {
-    console.error("Error in admin registration:", error);
-    res
-      .status(500)
-      .json({ message: "Error registering admin", error: error.message });
+    // =========================================================================
+    // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+    // Previously leaked raw error message:
+    // res.status(500).json({ message: "Error registering admin", error: error.message });
+    // =========================================================================
+    // [HARDENED FIX]: Delegate error to centralized error handling middleware
+    next(error);
   }
 });
 
@@ -103,7 +111,7 @@ router.post("/register", requireAdmin, async (req, res) => {
 // that's the entire account - no username, no password. They can only get
 // in via "Sign in with Google" (oauthRoute.js), which looks up admins by
 // this same email field.
-router.post("/invite", requireAdmin, async (req, res) => {
+router.post("/invite", requireAdmin, async (req, res, next) => {
   try {
     const { name, email } = req.body;
     if (!name || !email) {
@@ -119,20 +127,30 @@ router.post("/invite", requireAdmin, async (req, res) => {
     await invitedAdmin.save();
     res.status(201).json({ message: "Admin invited successfully" });
   } catch (error) {
-    console.error("Error inviting admin:", error);
-    res.status(500).json({ message: "Error inviting admin", error: error.message });
+    // =========================================================================
+    // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+    // console.error("Error inviting admin:", error);
+    // res.status(500).json({ message: "Error inviting admin", error: error.message });
+    // =========================================================================
+    // [HARDENED FIX]: Delegate error to centralized error handling middleware
+    next(error);
   }
 });
 
 // List every admin for the dashboard's Admins page - local and invited,
 // never the password hash.
-router.get("/", requireAdmin, async (req, res) => {
+router.get("/", requireAdmin, async (req, res, next) => {
   try {
     const admins = await Admin.find({}, "-password").sort({ createdAt: -1 });
     res.json(admins);
   } catch (error) {
-    console.error("Error listing admins:", error);
-    res.status(500).json({ message: "Error listing admins", error: error.message });
+    // =========================================================================
+    // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+    // console.error("Error listing admins:", error);
+    // res.status(500).json({ message: "Error listing admins", error: error.message });
+    // =========================================================================
+    // [HARDENED FIX]: Delegate error to centralized error handling middleware
+    next(error);
   }
 });
 

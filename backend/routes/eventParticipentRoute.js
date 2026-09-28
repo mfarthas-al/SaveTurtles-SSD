@@ -26,7 +26,7 @@ router.use(
 );
 
 // Route for saving a new participant with an image
-router.post("/", upload.single("paymentImage"), async (request, response) => {
+router.post("/", upload.single("paymentImage"), async (request, response, next) => {
   try {
     if (
       !request.body.participantName ||
@@ -80,13 +80,19 @@ router.post("/", upload.single("paymentImage"), async (request, response) => {
     const eventP = await EventParticipant.create(newEventParticipant);
     return response.status(201).send(eventP);
   } catch (error) {
-    console.log(error.message);
-    response.status(500).send({ message: error.message });
+    // =========================================================================
+    // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+    // Previously leaked raw error message:
+    // console.log(error.message);
+    // response.status(500).send({ message: error.message });
+    // =========================================================================
+    // [HARDENED FIX]: Delegate error to centralized error handling middleware
+    next(error);
   }
 });
 
 // Route for getting all participants from the DB
-router.get("/", async (request, response) => {
+router.get("/", async (request, response, next) => {
   try {
     const eventPs = await EventParticipant.find({});
     return response.status(200).json({
@@ -94,25 +100,35 @@ router.get("/", async (request, response) => {
       data: eventPs,
     });
   } catch (error) {
-    console.log(error.message);
-    response.status(500).send({ message: error.message });
+    // =========================================================================
+    // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+    // console.log(error.message);
+    // response.status(500).send({ message: error.message });
+    // =========================================================================
+    // [HARDENED FIX]: Delegate error to centralized error handling middleware
+    next(error);
   }
 });
 
 // Route for getting a participant by ID
-router.get("/:id", async (request, response) => {
+router.get("/:id", async (request, response, next) => {
   try {
     const { id } = request.params;
     const eventP = await EventParticipant.findById(id);
     return response.status(200).json(eventP);
   } catch (error) {
-    console.log(error.message);
-    response.status(500).send({ message: error.message });
+    // =========================================================================
+    // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+    // console.log(error.message);
+    // response.status(500).send({ message: error.message });
+    // =========================================================================
+    // [HARDENED FIX]: Delegate error to centralized error handling middleware
+    next(error);
   }
 });
 
 // Route for updating a participant (with image update)
-router.put("/:id", requireAdmin, upload.single("paymentImage"), async (request, response) => {
+router.put("/:id", requireAdmin, upload.single("paymentImage"), async (request, response, next) => {
   try {
     if (
       !request.body.participantName ||
@@ -157,13 +173,18 @@ router.put("/:id", requireAdmin, upload.single("paymentImage"), async (request, 
       participant: result,
     });
   } catch (error) {
-    console.log(error.message);
-    response.status(500).send({ message: error.message });
+    // =========================================================================
+    // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+    // console.log(error.message);
+    // response.status(500).send({ message: error.message });
+    // =========================================================================
+    // [HARDENED FIX]: Delegate error to centralized error handling middleware
+    next(error);
   }
 });
 
 // Route for deleting a participant
-router.delete("/:id", requireAdmin, async (request, response) => {
+router.delete("/:id", requireAdmin, async (request, response, next) => {
   try {
     const { id } = request.params;
     const result = await EventParticipant.findByIdAndDelete(id);
@@ -178,8 +199,13 @@ router.delete("/:id", requireAdmin, async (request, response) => {
       .status(200)
       .send({ message: "Event Participant deleted successfully" });
   } catch (error) {
-    console.log(error.message);
-    response.status(500).send({ message: error.message });
+    // =========================================================================
+    // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+    // console.log(error.message);
+    // response.status(500).send({ message: error.message });
+    // =========================================================================
+    // [HARDENED FIX]: Delegate error to centralized error handling middleware
+    next(error);
   }
 });
 
