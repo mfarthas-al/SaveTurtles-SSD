@@ -9,6 +9,12 @@ const router = express.Router();
 router.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
+
+    // Reject non-string input so query operators (e.g. { $ne: ... }) cannot reach the filter
+    if (typeof username !== "string" || typeof password !== "string") {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
     const admin = await Admin.findOne({ username });
     if (!admin) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -36,6 +42,11 @@ router.post("/login", async (req, res) => {
 router.post("/register", async (req, res) => {
   try {
     const { username, password } = req.body;
+
+    // Reject non-string input so query operators (e.g. { $ne: ... }) cannot reach the filter
+    if (typeof username !== "string" || typeof password !== "string") {
+      return res.status(400).json({ message: "Username and password must be strings" });
+    }
 
     // Check if admin already exists
     const existingAdmin = await Admin.findOne({ username });

@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { PORT, mongoDBURL } from "./config.js";
 import mongoose from "mongoose";
+import mongoSanitize from "express-mongo-sanitize";
 import eventRoute from "./routes/eventRoute.js";
 import cors from "cors";
 import eventParticipantRoute from "./routes/eventParticipentRoute.js";
@@ -30,6 +31,33 @@ const app = express();
 
 // Middleware for parsing request body
 app.use(express.json());
+
+// Detect MongoDB operator keys ($ or .) anywhere in the request and reject with a clear message
+const hasMongoOperator = (value) => {
+  if (value && typeof value === "object") {
+    for (const key of Object.keys(value)) {
+      if (key.startsWith("$") || key.includes(".")) return true;
+      if (hasMongoOperator(value[key])) return true;
+    }
+  }
+  return false;
+};
+
+app.use((request, response, next) => {
+  if (
+    hasMongoOperator(request.body) ||
+    hasMongoOperator(request.query) ||
+    hasMongoOperator(request.params)
+  ) {
+    return response
+      .status(400)
+      .json({ message: "Blocked: potential NoSQL injection detected" });
+  }
+  next();
+});
+
+// Strip MongoDB operators ($, .) from request data to prevent NoSQL injection
+app.use(mongoSanitize());
 
 // Middleware for handling CORS Policy
 app.use(cors());
