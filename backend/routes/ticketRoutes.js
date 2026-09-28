@@ -5,7 +5,7 @@ import { Ticket } from "../models/ticketModel.js";
 
 const ticketRouter = express.Router();
 
-ticketRouter.post("/", async (request, response) => {
+ticketRouter.post("/", async (request, response, next) => {
     try {
         if (
             !request.body.topic ||
@@ -28,12 +28,18 @@ ticketRouter.post("/", async (request, response) => {
         const ticket = await Ticket.create(newTicket);
         return response.status(201).send(ticket);
     } catch (error) {
-        console.log(error.message);
-        response.status(500).send({ message: error.message });
+        // =========================================================================
+        // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+        // Previously leaked raw error message:
+        // console.log(error.message);
+        // response.status(500).send({ message: error.message });
+        // =========================================================================
+        // [HARDENED FIX]: Delegate error to centralized error handling middleware
+        next(error);
     }
 });
 
-ticketRouter.get("/", async (request, response) => {
+ticketRouter.get("/", async (request, response, next) => {
     try {
         const tickets = await Ticket.find({});
         return response.status(200).json({
@@ -41,23 +47,33 @@ ticketRouter.get("/", async (request, response) => {
             data: tickets,
         });
     } catch (error) {
-        console.log(error.message);
-        response.status(500).send({ message: error.message });
+        // =========================================================================
+        // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+        // console.log(error.message);
+        // response.status(500).send({ message: error.message });
+        // =========================================================================
+        // [HARDENED FIX]: Delegate error to centralized error handling middleware
+        next(error);
     }
 });
 
-ticketRouter.get("/:id", async (request, response) => {
+ticketRouter.get("/:id", async (request, response, next) => {
     try {
         const { id } = request.params;
         const ticket = await Ticket.findById(id);
         return response.status(200).json(ticket);
     } catch (error) {
-        console.log(error.message);
-        response.status(500).send({ message: error.message });
+        // =========================================================================
+        // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+        // console.log(error.message);
+        // response.status(500).send({ message: error.message });
+        // =========================================================================
+        // [HARDENED FIX]: Delegate error to centralized error handling middleware
+        next(error);
     }
 });
 
-ticketRouter.put("/:id", requireAdmin, async (request, response) => {
+ticketRouter.put("/:id", requireAdmin, async (request, response, next) => {
     try {
         if (
             !request.body.topic ||
@@ -78,12 +94,17 @@ ticketRouter.put("/:id", requireAdmin, async (request, response) => {
             .status(200)
             .send({ message: "Ticket updated successfully" });
     } catch (error) {
-        console.log(error.message);
-        response.status(500).send({ message: error.message });
+        // =========================================================================
+        // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+        // console.log(error.message);
+        // response.status(500).send({ message: error.message });
+        // =========================================================================
+        // [HARDENED FIX]: Delegate error to centralized error handling middleware
+        next(error);
     }
 });
 
-ticketRouter.delete("/:id", requireAdmin, async (request, response) => {
+ticketRouter.delete("/:id", requireAdmin, async (request, response, next) => {
     try {
         const { id } = request.params;
         const result = await Ticket.findByIdAndDelete(id);
@@ -96,12 +117,17 @@ ticketRouter.delete("/:id", requireAdmin, async (request, response) => {
             .status(200)
             .send({ message: "Ticket deleted successfully" });
     } catch (error) {
-        console.log(error.message);
-        response.status(500).send({ message: error.message });
+        // =========================================================================
+        // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+        // console.log(error.message);
+        // response.status(500).send({ message: error.message });
+        // =========================================================================
+        // [HARDENED FIX]: Delegate error to centralized error handling middleware
+        next(error);
     }
 });
 
-ticketRouter.post("/:id/reply", requireAdmin, async (req, res) => {
+ticketRouter.post("/:id/reply", requireAdmin, async (req, res, next) => {
     try {
         const { id } = req.params;
         const { message } = req.body;
@@ -154,8 +180,13 @@ ticketRouter.post("/:id/reply", requireAdmin, async (req, res) => {
             message: "Reply sent and ticket marked as solved",
         });
     } catch (error) {
-        console.error(error.message);
-        res.status(500).json({ message: "Server error" });
+        // =========================================================================
+        // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+        // console.error(error.message);
+        // res.status(500).json({ message: "Server error" });
+        // =========================================================================
+        // [HARDENED FIX]: Delegate error to centralized error handling middleware
+        next(error);
     }
 });
 

@@ -23,7 +23,7 @@ const loginLimiter = rateLimit({
 });
 
 // Admin Login
-router.post("/login", loginLimiter, async (req, res) => {
+router.post("/login", loginLimiter, async (req, res, next) => {
   try {
     const { username, password } = req.body;
     const admin = await Admin.findOne({ username });
@@ -44,13 +44,18 @@ router.post("/login", loginLimiter, async (req, res) => {
 
     res.json({ message: "Login successful", token });
   } catch (error) {
-    console.error("Error in admin login:", error);
-    res.status(500).json({ message: "Error logging in", error: error.message });
+    // =========================================================================
+    // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+    // Previously leaked raw error message:
+    // res.status(500).json({ message: "Error logging in", error: error.message });
+    // =========================================================================
+    // [HARDENED FIX]: Delegate error to centralized error handling middleware
+    next(error);
   }
 });
 
 // Admin Registration
-router.post("/register", async (req, res) => {
+router.post("/register", async (req, res, next) => {
   try {
     const { username, password } = req.body;
 
@@ -65,10 +70,13 @@ router.post("/register", async (req, res) => {
     await newAdmin.save();
     res.status(201).json({ message: "Admin registered successfully" });
   } catch (error) {
-    console.error("Error in admin registration:", error);
-    res
-      .status(500)
-      .json({ message: "Error registering admin", error: error.message });
+    // =========================================================================
+    // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+    // Previously leaked raw error message:
+    // res.status(500).json({ message: "Error registering admin", error: error.message });
+    // =========================================================================
+    // [HARDENED FIX]: Delegate error to centralized error handling middleware
+    next(error);
   }
 });
 
