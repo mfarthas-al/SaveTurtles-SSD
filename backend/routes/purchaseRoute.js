@@ -5,22 +5,25 @@ import { Product } from "../models/productModel.js";
 import multer from "multer";
 import path from "path";
 
+import { createSecureUpload } from "../middleware/upload.js";
+
 const router = express.Router();
 
-// Configure Multer for file uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/purchasePayment/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
-});
-
-const upload = multer({ storage: storage });
-
-// Serve static files from the 'uploads' folder
-router.use('/uploads/purchasePayment/', express.static(path.join(path.resolve(), 'uploads/purchasePayment/')));
+// =========================================================================
+// [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+// Previously, raw user filenames, unbounded file size, and no MIME/ext filters:
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => {
+//         cb(null, 'uploads/purchasePayment/');
+//     },
+//     filename: (req, file, cb) => {
+//         cb(null, Date.now() + '-' + file.originalname);
+//     }
+// });
+// const upload = multer({ storage: storage });
+// =========================================================================
+// [HARDENED FIX]: Centralized secure upload with UUID naming, type allowlist, and 5MB limit
+const upload = createSecureUpload("uploads/purchasePayment/");
 
 // Route for saving a new purchase with an image and stock update
 router.post("/", upload.single('image'), async (request, response) => {

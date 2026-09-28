@@ -9,15 +9,21 @@ import {
   getAllSaveMes, // Import the new controller function
 } from "../controllers/saveMeController.js";
 
-// Setup for file upload
-const storage = multer.diskStorage({
-  destination: "uploads/", // Directory to store uploaded images
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
+import { createSecureUpload } from "../middleware/upload.js";
 
-const upload = multer({ storage });
+// =========================================================================
+// [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+// Previously, raw user filenames, unbounded file size, and no MIME/ext filters:
+// const storage = multer.diskStorage({
+//   destination: "uploads/",
+//   filename: (req, file, cb) => {
+//     cb(null, Date.now() + "-" + file.originalname);
+//   },
+// });
+// const upload = multer({ storage });
+// =========================================================================
+// [HARDENED FIX]: Centralized secure upload with UUID naming, type allowlist, and 5MB limit
+const upload = createSecureUpload("uploads/");
 
 const saveMeRouter = express.Router();
 

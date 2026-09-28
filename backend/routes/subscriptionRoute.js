@@ -5,23 +5,25 @@ import multer from "multer";
 import path from "path";
 import router from "./eventRoute.js";
 
+import { createSecureUpload } from "../middleware/upload.js";
+
 const SubscriptionRouter = express.Router();
 
-// Setup for image upload (payment slip)
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/subscriptions"); // Path where files are stored
-  },
-  filename: function (req, file, cb) {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-const upload = multer({ storage });
-
-router.use(
-  "uploads/subscriptions",
-  express.static(path.join(path.resolve(), "uploads/subscriptions"))
-);
+// =========================================================================
+// [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+// Previously, raw user filenames, unbounded file size, and no MIME/ext filters:
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, "uploads/subscriptions");
+//   },
+//   filename: function (req, file, cb) {
+//     cb(null, `${Date.now()}-${file.originalname}`);
+//   },
+// });
+// const upload = multer({ storage });
+// =========================================================================
+// [HARDENED FIX]: Centralized secure upload with UUID naming, type allowlist, and 5MB limit
+const upload = createSecureUpload("uploads/subscriptions/");
 
 // Subscribe to a membership package
 SubscriptionRouter.post(
