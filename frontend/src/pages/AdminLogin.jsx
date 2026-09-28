@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5555';
 
@@ -9,6 +9,14 @@ const AdminLogin = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // The OAuth callback redirects failures back here as ?oauth_error=...
+  // since it can't show a React error state itself.
+  useEffect(() => {
+    const oauthError = searchParams.get('oauth_error');
+    if (oauthError) setError(oauthError);
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,6 +29,12 @@ const AdminLogin = () => {
     } catch (error) {
       setError(error.response?.data?.message || 'Invalid credentials');
     }
+  };
+
+  const handleGoogleLogin = () => {
+    // Full page navigation, not axios - this has to leave the SPA so the
+    // browser can actually go to Google's consent screen.
+    window.location.href = `${API_URL}/auth/google`;
   };
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -55,11 +69,20 @@ const AdminLogin = () => {
           Login
         </button>
       </form>
+      <div className="flex items-center my-4">
+        <div className="flex-grow border-t border-gray-300" />
+        <span className="mx-2 text-gray-400 text-sm">or</span>
+        <div className="flex-grow border-t border-gray-300" />
+      </div>
+      <button
+        type="button"
+        onClick={handleGoogleLogin}
+        className="w-full border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition duration-300"
+      >
+        Sign in with Google
+      </button>
     </div>
   </div>
-  
-
-
   );
 };
 
