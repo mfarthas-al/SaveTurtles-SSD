@@ -69,25 +69,42 @@ app.use(
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Serve static files
+// =========================================================================
+// [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+// Previously, raw uploaded static files were served without defensive security headers:
+// app.use("/uploads/eventPayment", express.static(path.join(__dirname, "uploads/eventPayment")));
+// app.use("/uploads/productImage", express.static(path.join(__dirname, "uploads/productImage")));
+// app.use("/uploads/purchasePayment", express.static(path.join(__dirname, "uploads/purchasePayment")));
+// app.use("/uploads/receipts", express.static(path.join(__dirname, "uploads/receipts")));
+// app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// =========================================================================
+// [HARDENED FIX]: Serve static uploads with defensive headers (nosniff & CSP) to prevent script execution
+const staticUploadOptions = {
+  setHeaders: (res) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Content-Security-Policy", "default-src 'none'");
+  },
+};
+
+// Serve static files with defensive headers
 app.use(
   "/uploads/eventPayment",
-  express.static(path.join(__dirname, "uploads/eventPayment"))
+  express.static(path.join(__dirname, "uploads/eventPayment"), staticUploadOptions)
 );
 
 app.use(
   "/uploads/productImage",
-  express.static(path.join(__dirname, "uploads/productImage"))
+  express.static(path.join(__dirname, "uploads/productImage"), staticUploadOptions)
 );
 
 app.use(
   "/uploads/purchasePayment",
-  express.static(path.join(__dirname, "uploads/purchasePayment"))
+  express.static(path.join(__dirname, "uploads/purchasePayment"), staticUploadOptions)
 );
 
 app.use(
   "/uploads/receipts",
-  express.static(path.join(__dirname, "uploads/receipts"))
+  express.static(path.join(__dirname, "uploads/receipts"), staticUploadOptions)
 );
 
 app.get("/", (request, response) => {
@@ -132,7 +149,10 @@ app.use("/productViews/purchaseForm", purchaseRoute);
 app.use("/purchaseList", purchaseRoute);
 
 //SaveMe Routes
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"), staticUploadOptions)
+);
 app.use("api/saveMe", saveMeRouter);
 
 app.use("/returnProductsendEmail", returnProductEmail);
