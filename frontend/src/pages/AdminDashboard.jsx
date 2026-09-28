@@ -13,6 +13,7 @@ const AdminDashboard = () => {
         { label: "Tickets", path: "/tickets" },
         { label: "FAQ", path: "/faqdashboard" },
         { label: "Rescue", path: "/analytics" },
+        { label: "Admins", path: "/admin/admins" },
     ];
 
     const handleButtonClick = (path) => {

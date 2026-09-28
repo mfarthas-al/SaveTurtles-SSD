@@ -16,8 +16,10 @@ import EditEventBooking from "./pages/Events/EditEventBooking";
 import DeleteEventBooking from "./pages/Events/DeleteEventBooking";
 
 import AdminLogin from "./pages/AdminLogin";
+import OAuthCallback from "./pages/OAuthCallback";
 import AdminRegister from "./pages/AdminRegister";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminsPage from "./pages/AdminsPage";
 import ProtectedRoute from "./components/ProtectedRoute"; // Import the ProtectedRoute component
 
 import ShowFAQ from "./pages/Help Desk and FAQ/ShowFAQ";
@@ -83,12 +85,28 @@ const App = () => {
       <Header />
       <Routes>
         <Route path="/admin" element={<AdminLogin />} />
-        <Route path="/admin/register" element={<AdminRegister />} />
+        <Route path="/admin/oauth-callback" element={<OAuthCallback />} />
+        <Route
+          path="/admin/register"
+          element={
+            <ProtectedRoute>
+              <AdminRegister />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/admin/dashboard"
           element={
             <ProtectedRoute>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/admins"
+          element={
+            <ProtectedRoute>
+              <AdminsPage />
             </ProtectedRoute>
           }
         />

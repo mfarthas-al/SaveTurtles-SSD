@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Finding #3 — Dependency Vulnerabilities (Before / After Fix Report)</title>
+  <style>
+    :root { --ink:#1a2332; --muted:#5a6577; --line:#d8dee8; --ok:#0b6e4f; --warn:#9a3412; --bg:#f7f8fb; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"Segoe UI",Tahoma,sans-serif; color:var(--ink); background:var(--bg); line-height:1.5; }
+    .wrap { max-width:920px; margin:0 auto; padding:28px 20px 64px; }
+    header, section { background:#fff; border:1px solid var(--line); border-radius:12px; padding:22px 24px; margin-bottom:16px; }
+    h1 { margin:0 0 8px; font-size:1.45rem; color:var(--ok); }
+    h2 { margin:0 0 12px; font-size:1.12rem; border-bottom:2px solid var(--ok); padding-bottom:6px; }
+    .meta { color:var(--muted); font-size:0.95rem; }
+    table { width:100%; border-collapse:collapse; font-size:0.9rem; margin:10px 0; }
+    th, td { border:1px solid var(--line); padding:9px 10px; text-align:left; vertical-align:top; }
+    th { background:#eef2f7; }
+    code, .path { font-family:Consolas,monospace; background:#eef2f7; padding:1px 5px; border-radius:4px; font-size:0.86em; }
+    pre { background:#1e293b; color:#e2e8f0; padding:12px 14px; border-radius:8px; overflow-x:auto; font-size:0.82rem; }
+    .ok { background:#ecfdf5; border-left:4px solid var(--ok); padding:10px 12px; margin:8px 0; }
+    .bad { background:#fff7ed; border-left:4px solid #ea580c; padding:10px 12px; margin:8px 0; }
+    .shot { background:#eff6ff; border-left:4px solid #2563eb; padding:10px 12px; margin:8px 0; }
+    .print-btn { background:var(--ok); color:#fff; border:0; padding:10px 16px; border-radius:8px; cursor:pointer; margin-top:10px; }
+    @media print { .print-btn { display:none; } body { background:#fff; } .wrap { padding:0; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Finding #3 — Outdated Dependencies with Known CVEs</h1>
+      <div class="meta">
+        SE4030 Secure Software Development · SaveTurtles.lk<br />
+        OWASP Top 10:2025 — <strong>A03 Software Supply Chain Failures</strong> · Severity: High<br />
+        Status: <strong>Partially remediated</strong> (safe upgrades applied; remaining issues documented)
+      </div>
+      <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+    </header>
+
+    <section>
+      <h2>1. What this finding is</h2>
+      <p>
+        Known CVEs exist in npm packages declared in <code>package.json</code> / locked in
+        <code>package-lock.json</code>. This is <strong>not</strong> a bug line inside route logic
+        (e.g. AdminRoute JWT is Finding #2 — do not mix evidence).
+      </p>
+      <p>Method: Software Composition Analysis — <code>npm audit --registry https://registry.npmjs.org</code></p>
+    </section>
+
+    <section>
+      <h2>2. BEFORE fix — screenshot targets (your evidence)</h2>
+      <div class="shot">
+        Take / keep screenshots of these lines <strong>before</strong> (already done) and pair with AFTER shots below.
+      </div>
+      <table>
+        <thead>
+          <tr><th>#</th><th>Package</th><th>File</th><th>Line</th><th>Before version</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td><strong>multer</strong></td><td class="path">backend/package.json</td><td>23</td><td><code>^1.4.4</code></td><td>CVE-2022-24434 (report highlight)</td></tr>
+          <tr><td>2</td><td><strong>express</strong></td><td class="path">backend/package.json</td><td>18</td><td><code>^4.19.2</code></td><td>Pulls body-parser / qs / path-to-regexp</td></tr>
+          <tr><td>3</td><td><strong>axios</strong></td><td class="path">frontend/package.json</td><td>13</td><td><code>^1.7.5</code></td><td>Multiple axios advisories</td></tr>
+          <tr><td>4</td><td><strong>jspdf</strong></td><td class="path">frontend/package.json</td><td>16</td><td><code>^2.5.1</code></td><td>PDF generation CVEs</td></tr>
+          <tr><td>5</td><td><strong>xlsx</strong></td><td class="path">frontend/package.json</td><td>30</td><td><code>^0.18.5</code></td><td>Prototype pollution / ReDoS — no free fix</td></tr>
+          <tr><td>6</td><td><strong>vite</strong></td><td class="path">frontend/package.json</td><td>45</td><td><code>^5.4.9</code></td><td>Dev server / esbuild tree</td></tr>
+        </tbody>
+      </table>
+      <p><strong>npm audit BEFORE counts:</strong></p>
+      <pre>Backend:  18 vulnerabilities (3 low, 1 moderate, 12 high, 2 critical)
+Frontend: 32 vulnerabilities (2 low, 8 moderate, 20 high, 2 critical)
+
+Evidence files:
+  evidence/03a_npm_audit_backend_BEFORE.txt
+  evidence/03b_npm_audit_frontend_BEFORE.txt</pre>
+    </section>
+
+    <section>
+      <h2>3. AFTER fix — what changed</h2>
+      <table>
+        <thead>
+          <tr><th>Package</th><th>Before</th><th>After</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>multer</td><td>^1.4.4</td><td><code>^1.4.5-lts.1</code></td><td class="ok">FIXED — CVE-2022-24434 addressed</td></tr>
+          <tr><td>express</td><td>^4.19.2</td><td><code>^4.21.2</code></td><td class="ok">FIXED (patched within Express 4)</td></tr>
+          <tr><td>nodemailer</td><td>^6.9.15</td><td><code>^6.10.1</code></td><td class="ok">Partially upgraded (still needs major for all advisories)</td></tr>
+          <tr><td>axios</td><td>^1.7.5</td><td><code>^1.20.0</code></td><td class="ok">FIXED / upgraded</td></tr>
+          <tr><td>jspdf</td><td>^2.5.1</td><td><code>^3.0.1</code></td><td class="ok">Upgraded (further fix needs breaking jspdf@4 + autotable@5)</td></tr>
+          <tr><td>vite</td><td>^5.4.9</td><td><code>^5.4.19</code></td><td class="ok">Patched within Vite 5</td></tr>
+          <tr><td>xlsx</td><td>^0.18.5</td><td><code>^0.18.5</code> (unchanged)</td><td class="bad">NOT FIXED</td></tr>
+        </tbody>
+      </table>
+      <p><strong>npm audit AFTER counts:</strong></p>
+      <pre>Backend:  7 vulnerabilities (2 moderate, 4 high, 1 critical)
+Frontend: 8 vulnerabilities (3 moderate, 4 high, 1 critical)
+
+Evidence files:
+  evidence/03a_npm_audit_backend_AFTER.txt
+  evidence/03b_npm_audit_frontend_AFTER.txt
+
+Reduction: Backend 18→7 · Frontend 32→8</pre>
+      <div class="shot">
+        <strong>AFTER screenshots to take now:</strong><br />
+        1) <code>backend/package.json</code> — show <code>multer: ^1.4.5-lts.1</code> and <code>express: ^4.21.2</code><br />
+        2) <code>frontend/package.json</code> — show axios / jspdf / vite new versions; xlsx still 0.18.5<br />
+        3) Terminal: <code>npm audit</code> AFTER summary lines (7 and 8 vulns)
+      </div>
+    </section>
+
+    <section>
+      <h2>4. FIXED — report comments (copy-ready)</h2>
+      <div class="ok">
+        <ul>
+          <li><strong>multer:</strong> Upgraded from <code>1.4.4</code> to <code>1.4.5-lts.1</code>, which removes the vulnerable <code>dicer</code> chain and remediates <strong>CVE-2022-24434</strong>.</li>
+          <li><strong>express:</strong> Upgraded <code>4.19.2 → 4.21.2</code> via dependency update / audit remediation.</li>
+          <li><strong>axios:</strong> Upgraded <code>1.7.5 → 1.20.0</code> to consume patched Axios releases.</li>
+          <li><strong>jspdf:</strong> Upgraded <code>2.5.1 → 3.0.1</code> (compatible as far as build allows without rewriting PDF features).</li>
+          <li><strong>vite:</strong> Upgraded <code>5.4.9 → 5.4.19</code> (latest patch on Vite 5 line).</li>
+          <li><strong>Process:</strong> Ran <code>npm audit fix</code> on backend and frontend; lockfiles updated; frontend <code>npm run build</code> succeeded after upgrades.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. NOT FIXED — remaining issues + reasons</h2>
+      <div class="bad">
+        <p>Assignment allows documenting vulnerabilities that were <strong>not</strong> fully fixed and why.</p>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Remaining</th><th>Where</th><th>Why not fully fixed</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>xlsx ^0.18.5</strong></td>
+            <td>frontend/package.json L30</td>
+            <td><strong>No fix available</strong> on the free community package (npm audit: “No fix available”). Proper remediation requires SheetJS Pro or replacing the library and rewriting Excel export code — out of minimal Finding #3 scope. <em>Accepted risk</em> for this assignment.</td>
+          </tr>
+          <tr>
+            <td><strong>jspdf</strong> remaining advisories</td>
+            <td>frontend (jspdf 3.x)</td>
+            <td>Full clear needs <code>jspdf@4</code> + <code>jspdf-autotable@5</code> (<code>npm audit fix --force</code> = <strong>breaking change</strong>). Would risk breaking PDF/table export UI. Left at 3.0.1 after successful build.</td>
+          </tr>
+          <tr>
+            <td><strong>vite / esbuild</strong></td>
+            <td>frontend devDependency</td>
+            <td>Remaining esbuild advisory wants Vite major (e.g. Vite 8 via <code>--force</code>). Breaking for the current React 18 / plugin stack; patched within Vite 5 instead.</td>
+          </tr>
+          <tr>
+            <td><strong>react-router-dom v6</strong></td>
+            <td>frontend</td>
+            <td>Fix requires React Router <strong>v7</strong> major migration (<code>--force</code>). Not done to avoid route/API breakage across the SPA.</td>
+          </tr>
+          <tr>
+            <td><strong>nodemailer</strong> remaining</td>
+            <td>backend</td>
+            <td>Remaining high advisories need nodemailer <strong>v10</strong> (<code>--force</code>, breaking). Kept on 6.10.1 for API compatibility with existing email routes.</td>
+          </tr>
+          <tr>
+            <td><strong>tar</strong> (via bcrypt / node-pre-gyp)</td>
+            <td>backend transitive</td>
+            <td>Transitive through native install tooling, not direct app code. Full clear needs chain upgrades that conflict with current bcrypt packaging; not rewritten.</td>
+          </tr>
+          <tr>
+            <td><strong>multer-gridfs-storage / gridfs-stream</strong></td>
+            <td>backend/package.json</td>
+            <td>Unmaintained / peer conflict with multer LTS. Not used in active route imports for core flows; removing requires GridFS redesign. Documented; multer itself was still upgraded with <code>--legacy-peer-deps</code>.</td>
+          </tr>
+          <tr>
+            <td>body-parser / qs / path-to-regexp / brace-expansion</td>
+            <td>transitive</td>
+            <td>Still flagged after safe fixes; clearing all requires forcing majors that risk Express/tooling breakage. Accepted residual for this remediation pass.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>6. Remediation steps performed</h2>
+      <pre>cd backend
+npm audit --registry https://registry.npmjs.org   # BEFORE → 18
+npm audit fix --registry https://registry.npmjs.org
+npm install multer@1.4.5-lts.1 express@4.21.2 nodemailer@6.10.1 --legacy-peer-deps
+npm audit --registry https://registry.npmjs.org   # AFTER → 7
+
+cd frontend
+npm audit --registry https://registry.npmjs.org   # BEFORE → 32
+npm audit fix --registry https://registry.npmjs.org
+npm install axios@latest jspdf@3.0.1 vite@5.4.19 --legacy-peer-deps
+npm run build   # smoke OK
+npm audit --registry https://registry.npmjs.org   # AFTER → 8</pre>
+    </section>
+
+    <section>
+      <h2>7. Report text block (paste into final Word report)</h2>
+      <pre>Finding #3 (A03 Software Supply Chain Failures) was remediated by running
+npm audit / npm audit fix and upgrading high-priority direct dependencies.
+
+Before: backend 18 vulns, frontend 32 vulns (npm audit evidence files attached).
+After:  backend 7 vulns, frontend 8 vulns.
+
+Key fix: multer upgraded from 1.4.4 to 1.4.5-lts.1 to address CVE-2022-24434.
+Also upgraded: express 4.21.2, axios 1.20.0, jspdf 3.0.1, vite 5.4.19, nodemailer 6.10.1.
+
+Not fully fixed:
+- xlsx@0.18.5 — npm reports “No fix available” without replacing the library.
+- Remaining jspdf / vite-major / react-router-v7 / nodemailer-v10 issues require
+  breaking upgrades that would risk application features; documented as accepted
+  residual risk for this assignment scope.
+- Abandoned/peer-constrained packages (multer-gridfs-storage, gridfs-stream)
+  were not removed to avoid feature redesign.</pre>
+    </section>
+
+    <section>
+      <h2>8. How to save this document</h2>
+      <ol>
+        <li>Open this HTML in Chrome/Edge.</li>
+        <li>Ctrl+P → Save as PDF.</li>
+        <li>Or copy sections into your <code>SSD-test.docx</code> / final report.</li>
+      </ol>
+      <p class="meta">
+        Project copy: <span class="path">evidence/Finding03_Dependency_Vulnerabilities_Fix_Report.html</span><br />
+        Desktop copy: <span class="path">C:\Users\USER\Desktop\Finding03_Dependency_Fix_Report.html</span>
+      </p>
+    </section>
+  </div>
+</body>
+</html>
