@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import helmet from "helmet";
 import { PORT, mongoDBURL } from "./config.js";
 import mongoose from "mongoose";
 import eventRoute from "./routes/eventRoute.js";
@@ -26,13 +27,43 @@ import subEmailRouter from "./routes/subscriptionEmail.js";
 
 import refundEmail from "./routes/refundEmail.js";
 
+// =========================================================================
+// [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+// Previously, no HTTP security headers were configured and X-Powered-By was exposed by default:
+// const app = express();
+// =========================================================================
+// [HARDENED FIX]: Disable Express server banner and apply Helmet security headers
 const app = express();
+app.disable("x-powered-by");
+app.use(helmet());
 
 // Middleware for parsing request body
 app.use(express.json());
 
-// Middleware for handling CORS Policy
-app.use(cors());
+// =========================================================================
+// [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
+// Previously, open wildcard CORS allowed any origin without restriction:
+// app.use(cors());
+// =========================================================================
+// [HARDENED FIX]: Restrict CORS to explicit allowlist, specific methods, and headers
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())
+  : ["http://localhost:5173"];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, server-to-server) or matching allowed origins
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("CORS policy violation: Origin not allowed"));
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 
 // Setup for ES module __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -110,6 +141,35 @@ app.use("/returnProductsendEmail", returnProductEmail);
 app.use("/memberships", MembershipRouter);
 app.use("/subscriptions", SubscriptionRouter);
 app.use("/sendSubEmail", subEmailRouter);
+
+// =========================================================================
+// [ORIGINAL INSECURE PATTERN - FOR AUDIT SCREENSHOT]
+// Previously, individual route handlers returned raw error.message directly in 500 responses:
+// catch (error) {
+//   response.status(500).send({ message: error.message });
+// }
+// =========================================================================
+// [HARDENED FIX]: Centralized Error Handling Middleware
+app.use((err, req, res, next) => {
+  // Log complete stack trace internally to server console for debugging
+  console.error("Internal Server Error:", err.stack || err);
+
+  const statusCode = err.statusCode || err.status || 500;
+
+  // In production, return generic safe message to prevent leaking internal stack/schema details
+  if (process.env.NODE_ENV === "production") {
+    return res.status(statusCode).json({
+      message: "An unexpected error occurred. Please contact administrator.",
+    });
+  }
+
+  // In development/test environments, output diagnostic error details
+  return res.status(statusCode).json({
+    message: err.message || "An unexpected error occurred.",
+    error: err.toString(),
+    stack: err.stack,
+  });
+});
 
 mongoose
   .connect(mongoDBURL)
