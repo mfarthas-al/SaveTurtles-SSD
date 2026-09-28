@@ -3,6 +3,7 @@ import express from "express";
 import helmet from "helmet";
 import { PORT, mongoDBURL } from "./config.js";
 import mongoose from "mongoose";
+import mongoSanitize from "express-mongo-sanitize";
 import eventRoute from "./routes/eventRoute.js";
 import cors from "cors";
 import eventParticipantRoute from "./routes/eventParticipentRoute.js";
@@ -10,6 +11,7 @@ import { fileURLToPath } from "url";
 import path from "path";
 import bookingEmail from "./routes/bookingEmail.js";
 import adminRoute from "./routes/AdminRoute.js";
+import oauthRoute from "./routes/oauthRoute.js";
 import faqRouter from "./routes/faqRoutes.js";
 import ticketRouter from "./routes/ticketRoutes.js";
 import productRoute from "./routes/productRoute.js";
@@ -24,7 +26,6 @@ import returnProductEmail from "./routes/returnProductEmail.js";
 import MembershipRouter from "./routes/membershipsRoute.js";
 import SubscriptionRouter from "./routes/subscriptionRoute.js";
 import subEmailRouter from "./routes/subscriptionEmail.js";
-
 import refundEmail from "./routes/refundEmail.js";
 
 // =========================================================================
@@ -39,6 +40,33 @@ app.use(helmet());
 
 // Middleware for parsing request body
 app.use(express.json());
+
+// Detect MongoDB operator keys ($ or .) anywhere in the request and reject with a clear message
+const hasMongoOperator = (value) => {
+  if (value && typeof value === "object") {
+    for (const key of Object.keys(value)) {
+      if (key.startsWith("$") || key.includes(".")) return true;
+      if (hasMongoOperator(value[key])) return true;
+    }
+  }
+  return false;
+};
+
+app.use((request, response, next) => {
+  if (
+    hasMongoOperator(request.body) ||
+    hasMongoOperator(request.query) ||
+    hasMongoOperator(request.params)
+  ) {
+    return response
+      .status(400)
+      .json({ message: "Blocked: potential NoSQL injection detected" });
+  }
+  next();
+});
+
+// Strip MongoDB operators ($, .) from request data to prevent NoSQL injection
+app.use(mongoSanitize());
 
 // =========================================================================
 // [ORIGINAL INSECURE CODE - FOR AUDIT SCREENSHOT]
@@ -117,27 +145,22 @@ app.use("/refunds", refundRoute);
 app.use("/userRefunds", refundRoute);
 app.use("/sendRefundEmail", refundEmail);
 
-// donations Route
+// Donations Route
 app.use("/donations", donationsRoute);
 app.use("/sendDonationEmail", donationEmail);
 
-//login
+// Admin & Auth Routes
 app.use("/admin", adminRoute);
 app.use("/admin/register", adminRoute);
+app.use("/auth", oauthRoute);
 
-// Product Routes
-app.use("/products", productRoute);
-app.use("/productViews", productRoute);
-app.use("/productViews/purchaseForm", purchaseRoute);
-app.use("/purchaseList", purchaseRoute);
-
-//SaveMe Routes
+// SaveMe Routes
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use("api/saveMe", saveMeRouter);
+app.use("/api/saveMe", saveMeRouter);
 
 app.use("/returnProductsendEmail", returnProductEmail);
 
-//Membership route
+// Membership routes
 app.use("/memberships", MembershipRouter);
 app.use("/subscriptions", SubscriptionRouter);
 app.use("/sendSubEmail", subEmailRouter);
@@ -146,7 +169,7 @@ app.use("/sendSubEmail", subEmailRouter);
 // [ORIGINAL INSECURE PATTERN - FOR AUDIT SCREENSHOT]
 // Previously, individual route handlers returned raw error.message directly in 500 responses:
 // catch (error) {
-//   response.status(500).send({ message: error.message });
+//    response.status(500).send({ message: error.message });
 // }
 // =========================================================================
 // [HARDENED FIX]: Centralized Error Handling Middleware
